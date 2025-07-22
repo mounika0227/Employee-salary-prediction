@@ -1,0 +1,224 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Text To Word</title></head><body><p># ---------------------------</p>
+<p># 1. Import Required Libraries</p>
+<p># ---------------------------</p>
+<p>import pandas as pd</p>
+<p>import numpy as np</p>
+<p>import matplotlib.pyplot as plt</p>
+<p>import seaborn as sns</p>
+<p>&nbsp;</p>
+<p># Scikit-learn imports for preprocessing, modeling, and evaluation</p>
+<p>from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV</p>
+<p>from sklearn.preprocessing import LabelEncoder, StandardScaler</p>
+<p>from sklearn.linear_model import LinearRegression</p>
+<p>from sklearn.metrics import mean_squared_error, r2_score</p>
+<p>from sklearn.ensemble import RandomForestRegressor</p>
+<p>from sklearn.tree import DecisionTreeRegressor</p>
+<p>from sklearn.svm import SVR</p>
+<p>from sklearn.model_selection import cross_validate</p>
+<p>&nbsp;</p>
+<p># To save and load the model</p>
+<p>import joblib</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 2. Load and Preview the Data</p>
+<p># ---------------------------</p>
+<p>df = pd.read_csv('employee_data.csv')</p>
+<p>&nbsp;</p>
+<p># Show the first few records to understand the structure of the dataset</p>
+<p>print("Data Preview:\n", df.head())</p>
+<p>&nbsp;</p>
+<p># Data information, including null values and types</p>
+<p>print("\nData Info:")</p>
+<p>df.info()</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 3. Data Cleaning &amp; Preprocessing</p>
+<p># ---------------------------</p>
+<p># Check for missing values</p>
+<p>print("\nMissing Values Count:")</p>
+<p>print(df.isnull().sum())</p>
+<p>&nbsp;</p>
+<p># Drop rows with missing values or impute them</p>
+<p>df = df.dropna() # Drop missing values for simplicity</p>
+<p>&nbsp;</p>
+<p># Display statistical summary of numerical features</p>
+<p>print("\nStatistical Summary:")</p>
+<p>print(df.describe())</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 4. Data Visualization (EDA)</p>
+<p># ---------------------------</p>
+<p># Correlation Heatmap to visualize relationships</p>
+<p>plt.figure(figsize=(10, 6))</p>
+<p>sns.heatmap(df.corr(), annot=True, cmap='coolwarm')</p>
+<p>plt.title("Correlation Heatmap")</p>
+<p>plt.show()</p>
+<p>&nbsp;</p>
+<p># Boxplot to show salary distribution by education level</p>
+<p>plt.figure(figsize=(10, 6))</p>
+<p>sns.boxplot(x='Education_Level', y='Salary', data=df)</p>
+<p>plt.title('Salary Distribution by Education Level')</p>
+<p>plt.show()</p>
+<p>&nbsp;</p>
+<p># Distribution of salary</p>
+<p>plt.figure(figsize=(10, 6))</p>
+<p>sns.histplot(df['Salary'], kde=True, color='blue', bins=20)</p>
+<p>plt.title('Salary Distribution')</p>
+<p>plt.show()</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 5. Label Encoding for Categorical Columns</p>
+<p># ---------------------------</p>
+<p># Label encoding for categorical variables</p>
+<p>categorical_cols = ['Education_Level', 'Department', 'Job_Role', 'Location']</p>
+<p>&nbsp;</p>
+<p># Initialize the LabelEncoder</p>
+<p>le = LabelEncoder()</p>
+<p>&nbsp;</p>
+<p># Apply LabelEncoder to each categorical column</p>
+<p>for col in categorical_cols:</p>
+<p>&nbsp; &nbsp; df[col] = le.fit_transform(df[col])</p>
+<p>&nbsp;</p>
+<p># Show the first few records after encoding</p>
+<p>print("\nData After Encoding:")</p>
+<p>print(df.head())</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 6. Feature Selection and Target Variable</p>
+<p># ---------------------------</p>
+<p># Define the target variable and features</p>
+<p>X = df.drop(columns=['Salary'])</p>
+<p>y = df['Salary']</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 7. Train-Test Split</p>
+<p># ---------------------------</p>
+<p># Split the data into training and testing sets</p>
+<p>X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)</p>
+<p>&nbsp;</p>
+<p># Print the shape of the train-test split</p>
+<p>print(f"\nTrain Test Split: X_train: {X_train.shape}, X_test: {X_test.shape}")</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 8. Feature Scaling (Standardization)</p>
+<p># ---------------------------</p>
+<p># Standardizing the features for better model performance</p>
+<p>scaler = StandardScaler()</p>
+<p>&nbsp;</p>
+<p># Fit and transform on training data, transform on testing data</p>
+<p>X_train_scaled = scaler.fit_transform(X_train)</p>
+<p>X_test_scaled = scaler.transform(X_test)</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 9. Model Selection and Training</p>
+<p># ---------------------------</p>
+<p>&nbsp;</p>
+<p># Initialize multiple models for comparison</p>
+<p>models = {</p>
+<p>&nbsp; &nbsp; "Linear Regression": LinearRegression(),</p>
+<p>&nbsp; &nbsp; "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42),</p>
+<p>&nbsp; &nbsp; "Decision Tree": DecisionTreeRegressor(random_state=42),</p>
+<p>&nbsp; &nbsp; "Support Vector Regressor": SVR(kernel='linear')</p>
+<p>}</p>
+<p>&nbsp;</p>
+<p># Train and evaluate each model using cross-validation</p>
+<p>for name, model in models.items():</p>
+<p>&nbsp; &nbsp; print(f"\nTraining {name}...")</p>
+<p>&nbsp; &nbsp; model.fit(X_train_scaled, y_train)</p>
+<p>&nbsp; &nbsp;&nbsp;</p>
+<p>&nbsp; &nbsp; # Predict on the test set</p>
+<p>&nbsp; &nbsp; y_pred = model.predict(X_test_scaled)</p>
+<p>&nbsp; &nbsp;&nbsp;</p>
+<p>&nbsp; &nbsp; # Calculate performance metrics</p>
+<p>&nbsp; &nbsp; mse = mean_squared_error(y_test, y_pred)</p>
+<p>&nbsp; &nbsp; r2 = r2_score(y_test, y_pred)</p>
+<p>&nbsp; &nbsp;&nbsp;</p>
+<p>&nbsp; &nbsp; print(f"{name} - MSE: {mse}, R2: {r2}")</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 10. Cross-Validation</p>
+<p># ---------------------------</p>
+<p># Perform k-fold cross-validation on each model</p>
+<p>cv_results = {}</p>
+<p>for name, model in models.items():</p>
+<p>&nbsp; &nbsp; print(f"\nPerforming cross-validation for {name}...")</p>
+<p>&nbsp; &nbsp; cv_score = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='neg_mean_squared_error')</p>
+<p>&nbsp; &nbsp; cv_results[name] = cv_score.mean()</p>
+<p>&nbsp; &nbsp; print(f"{name} - Cross-Validation MSE: {-cv_results[name]}")</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 11. Hyperparameter Tuning (GridSearchCV)</p>
+<p># ---------------------------</p>
+<p># We will tune hyperparameters for Random Forest as an example</p>
+<p>param_grid = {</p>
+<p>&nbsp; &nbsp; 'n_estimators': [50, 100, 200],</p>
+<p>&nbsp; &nbsp; 'max_depth': [10, 20, 30],</p>
+<p>&nbsp; &nbsp; 'min_samples_split': [2, 5, 10]</p>
+<p>}</p>
+<p>&nbsp;</p>
+<p>grid_search = GridSearchCV(RandomForestRegressor(random_state=42), param_grid, cv=5, n_jobs=-1, scoring='neg_mean_squared_error')</p>
+<p>grid_search.fit(X_train_scaled, y_train)</p>
+<p>&nbsp;</p>
+<p># Display best parameters</p>
+<p>print(f"\nBest Parameters from GridSearchCV: {grid_search.best_params_}")</p>
+<p>&nbsp;</p>
+<p># Train model with best parameters</p>
+<p>best_rf_model = grid_search.best_estimator_</p>
+<p>best_rf_model.fit(X_train_scaled, y_train)</p>
+<p>&nbsp;</p>
+<p># Evaluate the best model on the test set</p>
+<p>y_pred_best_rf = best_rf_model.predict(X_test_scaled)</p>
+<p>mse_best_rf = mean_squared_error(y_test, y_pred_best_rf)</p>
+<p>r2_best_rf = r2_score(y_test, y_pred_best_rf)</p>
+<p>&nbsp;</p>
+<p>print(f"Best Random Forest - MSE: {mse_best_rf}, R2: {r2_best_rf}")</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 12. Model Comparison (Visualization)</p>
+<p># ---------------------------</p>
+<p># Compare all models' performance using bar plot</p>
+<p>model_names = list(models.keys()) + ['Best Random Forest']</p>
+<p>model_mse = [mean_squared_error(y_test, model.predict(X_test_scaled)) for model in models.values()] + [mse_best_rf]</p>
+<p>&nbsp;</p>
+<p>plt.figure(figsize=(10, 6))</p>
+<p>sns.barplot(x=model_names, y=model_mse)</p>
+<p>plt.title('Model Comparison - MSE')</p>
+<p>plt.xticks(rotation=45)</p>
+<p>plt.show()</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 13. Feature Importance (Random Forest)</p>
+<p># ---------------------------</p>
+<p># Feature importance with Random Forest model</p>
+<p>feature_importance = best_rf_model.feature_importances_</p>
+<p>&nbsp;</p>
+<p># Create a DataFrame to display feature importance</p>
+<p>importance_df = pd.DataFrame({</p>
+<p>&nbsp; &nbsp; 'Feature': X.columns,</p>
+<p>&nbsp; &nbsp; 'Importance': feature_importance</p>
+<p>})</p>
+<p>&nbsp;</p>
+<p># Sort by importance</p>
+<p>importance_df = importance_df.sort_values(by='Importance', ascending=False)</p>
+<p>&nbsp;</p>
+<p># Plot feature importance</p>
+<p>plt.figure(figsize=(10, 6))</p>
+<p>sns.barplot(x='Importance', y='Feature', data=importance_df)</p>
+<p>plt.title('Feature Importance - Best Random Forest Model')</p>
+<p>plt.show()</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 14. Save the Model</p>
+<p># ---------------------------</p>
+<p># Save the best model using joblib for future predictions</p>
+<p>joblib.dump(best_rf_model, 'salary_prediction_best_rf_model.pkl')</p>
+<p>print("\nModel saved as 'salary_prediction_best_rf_model.pkl'")</p>
+<p>&nbsp;</p>
+<p># ---------------------------</p>
+<p># 15. Predict New Data (Optional)</p>
+<p># ---------------------------</p>
+<p># Example: Predict salary for new employee data</p>
+<p>sample_input = np.array([[5, 2, 1, 3, 2, 30]]) # Dummy encoded values</p>
+<p>sample_input_scaled = scaler.transform(sample_input)</p>
+<p>predicted_salary = best_rf_model.predict(sample_input_scaled)</p>
+<p>print("\nPredicted Salary for New Employee:", predicted_salary[0])</p></body></html>
